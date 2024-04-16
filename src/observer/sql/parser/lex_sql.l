@@ -69,7 +69,7 @@ QUOTE            [\'\"]
 
 /* 规则匹配的优先级：*/
 /* 1. 匹配的规则长的优先 */
-/* 2. 写在最前面的优先 */
+/* 2. 写在最前面的优先 */ 
 
 /* yylval 就可以认为是 yacc 中 %union 定义的结构体(union 结构) */
 %%
@@ -108,6 +108,11 @@ BEGIN                                   RETURN_TOKEN(TRX_BEGIN);
 COMMIT                                  RETURN_TOKEN(TRX_COMMIT);
 ROLLBACK                                RETURN_TOKEN(TRX_ROLLBACK);
 INT                                     RETURN_TOKEN(INT_T);
+SUM                                     RETURN_TOKEN(SUM_F);
+MAX                                     RETURN_TOKEN(MAX_F);
+MIN                                     RETURN_TOKEN(MIN_F);
+AVG                                     RETURN_TOKEN(AVG_F);
+COUNT                                   RETURN_TOKEN(COUNT_F);
 DATE                                    RETURN_TOKEN(DATE_T);
 CHAR                                    RETURN_TOKEN(STRING_T);
 FLOAT                                   RETURN_TOKEN(FLOAT_T);

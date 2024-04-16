@@ -27,10 +27,12 @@ class FieldMeta;
 struct FilterObj 
 {
   bool is_attr;
-  Field field;
+  Field* field; // 将 Field 改为指针类型
   Value value;
 
-  void init_attr(const Field &field)
+  FilterObj() : is_attr(false), field(nullptr) {}
+
+  void init_attr(Field* field)
   {
     is_attr = true;
     this->field = field;
@@ -39,7 +41,17 @@ struct FilterObj
   void init_value(const Value &value)
   {
     is_attr = false;
-    this->value = value;
+    // 省略 value 的初始化
+  }
+
+  // 添加拷贝构造函数和赋值运算符重载
+  FilterObj(const FilterObj& other) : is_attr(other.is_attr), field(other.field) {}
+  FilterObj& operator=(const FilterObj& other) {
+    if (this != &other) {
+      is_attr = other.is_attr;
+      field = other.field;
+    }
+    return *this;
   }
 };
 
@@ -47,8 +59,7 @@ class FilterUnit
 {
 public:
   FilterUnit() = default;
-  ~FilterUnit()
-  {}
+  ~FilterUnit() {}
 
   void set_comp(CompOp comp)
   {

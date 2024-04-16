@@ -16,6 +16,7 @@ See the Mulan PSL v2 for more details. */
 #include "sql/operator/project_physical_operator.h"
 #include "storage/record/record.h"
 #include "storage/table/table.h"
+#include "sql/operator/aggregate_physical_operator.h"
 
 RC ProjectPhysicalOperator::open(Trx *trx)
 {

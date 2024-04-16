@@ -13,7 +13,7 @@ See the Mulan PSL v2 for more details. */
 //
 
 #include "sql/optimizer/logical_plan_generator.h"
-
+#include "sql/optimizer/physical_plan_generator.h"
 #include "sql/operator/logical_operator.h"
 #include "sql/operator/calc_logical_operator.h"
 #include "sql/operator/project_logical_operator.h"
@@ -32,6 +32,10 @@ See the Mulan PSL v2 for more details. */
 #include "sql/stmt/insert_stmt.h"
 #include "sql/stmt/delete_stmt.h"
 #include "sql/stmt/explain_stmt.h"
+#include "sql/operator/aggregate_logical_operator.h"
+#include "sql/operator/aggregate_physical_operator.h"
+
+#include "sql/expr/expression.h"
 
 using namespace std;
 
@@ -121,9 +125,26 @@ RC LogicalPlanGenerator::create_plan(
     }
   }
 
-  logical_operator.swap(project_oper);
-  return RC::SUCCESS;
+
+
+bool aggr_flag=false;
+for(auto field:all_fields){
+  if(field.aggregation()!=AggrOp::AGGR_NODE){
+    aggr_flag=true;
+    break;
+  }
 }
+
+if(aggr_flag){
+  unique_ptr<LogicalOperator> aggregate_oper(new AggregateLogicalOperator(all_fields));
+  aggregate_oper->add_child(std::move(project_oper));
+  logical_operator.swap(aggregate_oper);
+}else{
+  logical_operator.swap(project_oper);
+}
+return RC::SUCCESS;
+}
+
 
 RC LogicalPlanGenerator::create_plan(
     FilterStmt *filter_stmt, unique_ptr<LogicalOperator> &logical_operator)
@@ -135,11 +156,11 @@ RC LogicalPlanGenerator::create_plan(
     const FilterObj &filter_obj_right = filter_unit->right();
 
     unique_ptr<Expression> left(filter_obj_left.is_attr
-                                         ? static_cast<Expression *>(new FieldExpr(filter_obj_left.field))
+                                         ? static_cast<Expression *>(new FieldExpr(*filter_obj_left.field))
                                          : static_cast<Expression *>(new ValueExpr(filter_obj_left.value)));
 
     unique_ptr<Expression> right(filter_obj_right.is_attr
-                                          ? static_cast<Expression *>(new FieldExpr(filter_obj_right.field))
+                                          ? static_cast<Expression *>(new FieldExpr(*filter_obj_right.field))
                                           : static_cast<Expression *>(new ValueExpr(filter_obj_right.value)));
 
     ComparisonExpr *cmp_expr = new ComparisonExpr(filter_unit->comp(), std::move(left), std::move(right));

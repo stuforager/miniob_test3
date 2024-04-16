@@ -18,6 +18,7 @@ See the Mulan PSL v2 for more details. */
 #include "storage/table/table.h"
 #include "storage/trx/trx.h"
 #include "sql/stmt/delete_stmt.h"
+#include "sql/operator/aggregate_physical_operator.h"
 
 RC DeletePhysicalOperator::open(Trx *trx)
 {

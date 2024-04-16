@@ -73,6 +73,7 @@ private:
    */
   RC generate_physical_plan(
       std::unique_ptr<LogicalOperator> &logical_operator, std::unique_ptr<PhysicalOperator> &physical_operator);
+  RC create_plan(AggregatePhysicalOperator &aggregate_oper, std::unique_ptr<PhysicalOperator> &oper);
 
 private:
   LogicalPlanGenerator  logical_plan_generator_;  ///< 根据SQL生成逻辑计划

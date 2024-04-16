@@ -100,7 +100,8 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
       return rc;
     }
     FilterObj filter_obj;
-    filter_obj.init_attr(Field(table, field));
+    Field* new_field = new Field(table, field); // 创建 Field 对象的指针
+    filter_obj.init_attr(new_field);
     filter_unit->set_left(filter_obj);
   } else {
     FilterObj filter_obj;
@@ -117,7 +118,8 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
       return rc;
     }
     FilterObj filter_obj;
-    filter_obj.init_attr(Field(table, field));
+    Field* new_field = new Field(table, field); // 创建 Field 对象的指针
+    filter_obj.init_attr(new_field);
     filter_unit->set_right(filter_obj);
   } else {
     FilterObj filter_obj;

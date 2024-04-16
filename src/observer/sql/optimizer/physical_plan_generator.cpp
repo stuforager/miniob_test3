@@ -10,11 +10,12 @@ See the Mulan PSL v2 for more details. */
 
 //
 // Created by Wangyunlai on 2022/12/14.
-//
+
 
 #include <utility>
 
 #include "sql/optimizer/physical_plan_generator.h"
+
 #include "sql/operator/table_get_logical_operator.h"
 #include "sql/operator/table_scan_physical_operator.h"
 #include "sql/operator/index_scan_physical_operator.h"
@@ -34,6 +35,8 @@ See the Mulan PSL v2 for more details. */
 #include "sql/operator/calc_physical_operator.h"
 #include "sql/expr/expression.h"
 #include "common/log/log.h"
+#include "sql/operator/aggregate_physical_operator.h"
+#include "sql/operator/aggregate_logical_operator.h"
 
 using namespace std;
 
@@ -292,3 +295,33 @@ RC PhysicalPlanGenerator::create_plan(CalcLogicalOperator &logical_oper, std::un
   return rc;
 }
 
+RC PhysicalPlanGenerator::create_plan(AggregateLogicalOperator &aggregate_oper, unique_ptr<PhysicalOperator> &oper)
+{
+
+  vector<unique_ptr<LogicalOperator>> &child_opers = aggregate_oper.children();
+  ASSERT(child_opers.size()==1,"aggregate logical operator's sub oper number should be 1");
+  
+  LogicalOperator &child_oper=*child_opers.front();
+
+  unique_ptr<PhysicalOperator> child_phy_oper;
+  RC rc=create(child_oper,child_phy_oper);
+  if(rc!=RC::SUCCESS){
+    LOG_WARN("failed to create child operator of predicate operator. rc=%s",strrc(rc));
+    return rc;
+  }
+
+  AggregatePhysicalOperator*aggregate_operator=new AggregatePhysicalOperator;
+  const vector<Field>&aggregate_fields=aggregate_oper.fields();
+  LOG_TRACE("got %d aggregation fields",aggregate_fields.size());
+  for(const Field&field:aggregate_fields){
+    aggregate_operator->add_aggregation(field.aggregation());
+  }
+  if(child_phy_oper){
+    aggregate_operator->add_child(std::move(child_phy_oper));
+  }
+
+  oper=unique_ptr<PhysicalOperator>(aggregate_operator);
+
+  LOG_TRACE("create an aggregate physical operator");
+  return rc;
+}

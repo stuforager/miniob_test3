@@ -118,8 +118,14 @@ RC SelectStmt::create(Db *db, const SelectSqlNode &select_sql, Stmt *&stmt)
         LOG_WARN("no such field. field=%s.%s.%s", db->name(), table->name(), relation_attr.attribute_name.c_str());
         return RC::SCHEMA_FIELD_MISSING;
       }
+      const AggrOp aggregation_=relation_attr.aggregation;
 
-      query_fields.push_back(Field(table, field_meta));
+      bool valid_=relation_attr.valid;
+      if(!valid_){
+        return RC::INVALID_ARGUMENT;
+      }
+
+      query_fields.push_back(Field(table, field_meta,aggregation_));
     }
   }
 

@@ -17,6 +17,7 @@ See the Mulan PSL v2 for more details. */
 #include "session/session.h"
 #include "storage/trx/trx.h"
 #include "common/log/log.h"
+#include "sql/operator/aggregate_physical_operator.h"
 
 SqlResult::SqlResult(Session *session) : session_(session)
 {}
