@@ -81,6 +81,7 @@ RC AggregatePhysicalOperator::next()
                           else arr[i]=current_str[i];
                         }
                         if (current_str > max_str) {
+                            arr[current_str.size()]='\0';
                             result_cells[cell_idx].set_string(arr);
                             free(arr);
                         }
