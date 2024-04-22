@@ -27,8 +27,15 @@ public:
   Field() = default;
   Field(const Table *table, const FieldMeta *field,const AggrOp aggregation=AggrOp::AGGR_NODE) : table_(table), field_(field),aggregation_(aggregation)
   {}
-  Field(const Field &) = default;
-
+  Field(const Field& other) : table_(other.table_), field_(other.field_), aggregation_(other.aggregation_) {}
+  Field& operator=(const Field& other) {
+    if (this != &other) {
+        table_ = other.table_;
+        field_ = other.field_;
+        aggregation_ = other.aggregation_;
+    }
+    return *this;
+}
   const Table *table() const
   {
     return table_;
@@ -73,5 +80,5 @@ public:
 private:
   const Table *table_ = nullptr;
   const FieldMeta *field_ = nullptr;
-  const AggrOp aggregation_ = AggrOp::AGGR_NODE;
+   AggrOp aggregation_ = AggrOp::AGGR_NODE;
 };

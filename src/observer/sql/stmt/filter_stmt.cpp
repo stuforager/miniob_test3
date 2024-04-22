@@ -12,10 +12,10 @@ See the Mulan PSL v2 for more details. */
 // Created by Wangyunlai on 2022/5/22.
 //
 
-#include "common/rc.h"
-#include "common/log/log.h"
-#include "common/lang/string.h"
 #include "sql/stmt/filter_stmt.h"
+#include "common/lang/string.h"
+#include "common/log/log.h"
+#include "common/rc.h"
 #include "storage/db/db.h"
 #include "storage/table/table.h"
 
@@ -31,11 +31,12 @@ RC FilterStmt::create(Db *db, Table *default_table, std::unordered_map<std::stri
     const ConditionSqlNode *conditions, int condition_num, FilterStmt *&stmt)
 {
   RC rc = RC::SUCCESS;
-  stmt = nullptr;
+  stmt  = nullptr;
 
   FilterStmt *tmp_stmt = new FilterStmt();
   for (int i = 0; i < condition_num; i++) {
     FilterUnit *filter_unit = nullptr;
+
     rc = create_filter_unit(db, default_table, tables, conditions[i], filter_unit);
     if (rc != RC::SUCCESS) {
       delete tmp_stmt;
@@ -73,7 +74,6 @@ RC get_table_and_field(Db *db, Table *default_table, std::unordered_map<std::str
     table = nullptr;
     return RC::SCHEMA_FIELD_NOT_EXIST;
   }
-  
 
   return RC::SUCCESS;
 }
@@ -92,16 +92,15 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
   filter_unit = new FilterUnit;
 
   if (condition.left_is_attr) {
-    Table *table = nullptr;
+    Table           *table = nullptr;
     const FieldMeta *field = nullptr;
-    rc = get_table_and_field(db, default_table, tables, condition.left_attr, table, field);
+    rc                     = get_table_and_field(db, default_table, tables, condition.left_attr, table, field);
     if (rc != RC::SUCCESS) {
       LOG_WARN("cannot find attr");
       return rc;
     }
     FilterObj filter_obj;
-    Field* new_field = new Field(table, field); // 创建 Field 对象的指针
-    filter_obj.init_attr(new_field);
+    filter_obj.init_attr(Field(table, field));
     filter_unit->set_left(filter_obj);
   } else {
     FilterObj filter_obj;
@@ -110,42 +109,20 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
   }
 
   if (condition.right_is_attr) {
-    Table *table = nullptr;
+    Table           *table = nullptr;
     const FieldMeta *field = nullptr;
-    rc = get_table_and_field(db, default_table, tables, condition.right_attr, table, field);
+    rc                     = get_table_and_field(db, default_table, tables, condition.right_attr, table, field);
     if (rc != RC::SUCCESS) {
       LOG_WARN("cannot find attr");
       return rc;
     }
     FilterObj filter_obj;
-    Field* new_field = new Field(table, field); // 创建 Field 对象的指针
-    filter_obj.init_attr(new_field);
+    filter_obj.init_attr(Field(table, field));
     filter_unit->set_right(filter_obj);
   } else {
     FilterObj filter_obj;
     filter_obj.init_value(condition.right_value);
     filter_unit->set_right(filter_obj);
-  }
-  if(condition.right_value.attr_type()==DATES)
-  {
-    int val=condition.right_value.get_date();
-      
-      int year=val/10000,month=(val/100)%100,day=val%100;
-      //1971--2038.2
-      if(year<1970||year>2038) return RC::SCHEMA_FIELD_TYPE_MISMATCH;
-      if(year==2038&&month>2)  return RC::SCHEMA_FIELD_TYPE_MISMATCH;
-      if(month<1||month>12)return RC::SCHEMA_FIELD_TYPE_MISMATCH;
-      int daymax[]={0,31,28,31,30,31,30,31,31,30,31,30,31};
-      if(month==2)
-      {
-        if((year%4==0&&year%100!=0)||year%400==0)
-        {
-          daymax[month]=29;
-        }
-      }
-      
-      if(day<1||day>daymax[month])return RC::SCHEMA_FIELD_TYPE_MISMATCH;
-      
   }
 
   filter_unit->set_comp(comp);
