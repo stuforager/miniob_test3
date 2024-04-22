@@ -87,23 +87,14 @@ RC AggregatePhysicalOperator::next()
                         }
                     }
                     else if (attr_type == AttrType::DATES) {
-        std::string current_date_str = cell.get_string(); // 假设返回的是日期字符串
-        std::string max_date_str = result_cells[cell_idx].get_string(); // 假设返回的是日期字符串
+                      std::string current_date_str = cell.get_string();
+                        std::string max_date_str = result_cells[cell_idx].get_string();
 
-        // 使用 strptime 解析日期字符串为 tm 结构体
-        struct tm current_tm, max_tm;
-        strptime(current_date_str.c_str(), "%Y-%m-%d", &current_tm);
-        strptime(max_date_str.c_str(), "%Y-%m-%d", &max_tm);
-
-        // 将 tm 结构体转换为 time_t 类型
-        time_t current_time = mktime(&current_tm);
-        time_t max_time = mktime(&max_tm);
-
-        if (current_time > max_time) {
-            char max_date_char[current_date_str.length() + 1];
-            std::strcpy(max_date_char, current_date_str.c_str());
-            result_cells[cell_idx].set_string(max_date_char);
-        }
+                        if (max_date_str.empty() || current_date_str > max_date_str) {
+                            char max_date_char[current_date_str.length() + 1];
+                            std::strcpy(max_date_char, current_date_str.c_str());
+                            result_cells[cell_idx].set_string(max_date_char);
+                        }
     }
                    
                     
