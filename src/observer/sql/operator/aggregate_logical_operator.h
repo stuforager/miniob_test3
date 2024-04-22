@@ -24,7 +24,7 @@ public:
   const std::vector<Field> &fields() const { return fields_; }
   
 
-public:
+private:
   
   std::vector<Field> fields_;
 };

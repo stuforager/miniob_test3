@@ -25,7 +25,7 @@ See the Mulan PSL v2 for more details. */
 #include "event/session_event.h"
 #include "session/session.h"
 #include "sql/stmt/stmt.h"
-
+#include<iostream>
 using namespace common;
 
 RC ResolveStage::handle_request(SQLStageEvent *sql_event)

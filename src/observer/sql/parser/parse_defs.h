@@ -40,6 +40,7 @@ enum AggrOp
   AGGR_MIN,
   AGGR_AVG,
   AGGR_COUNT,
+  AGGR_COUNT_ALL,
   AGGR_NODE
 };
 struct RelAttrSqlNode

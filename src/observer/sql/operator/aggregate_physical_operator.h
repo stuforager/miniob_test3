@@ -32,7 +32,7 @@ public:
   void NewFunction(std::vector<Value> &result_cells, int cell_idx, Value &cell);
   RC   close() override;
 
-  Tuple *current_tuple() override { return nullptr; }
+  Tuple *current_tuple() override {return &result_tuple_; }
 
 private:
   std::vector<AggrOp> aggregations_;

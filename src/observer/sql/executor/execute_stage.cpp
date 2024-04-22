@@ -71,9 +71,9 @@ RC ExecuteStage::handle_request_with_physical_operator(SQLStageEvent *sql_event)
 
       for (const Field &field : select_stmt->query_fields()) {
         if (with_table_name) {
-          schema.append_cell(field.table_name(), field.field_name());
+          schema.append_cell(field.table_name(), field.field_name(),field.aggregation());
         } else {
-          schema.append_cell(field.field_name());
+          schema.append_cell(nullptr,field.field_name(),field.aggregation());
         }
       }
     } break;
@@ -81,12 +81,12 @@ RC ExecuteStage::handle_request_with_physical_operator(SQLStageEvent *sql_event)
     case StmtType::CALC: {
       CalcPhysicalOperator *calc_operator = static_cast<CalcPhysicalOperator *>(physical_operator.get());
       for (const unique_ptr<Expression> & expr : calc_operator->expressions()) {
-        schema.append_cell(expr->name().c_str());
+        schema.append_cell(expr->name().c_str(),nullptr);
       }
     } break;
 
     case StmtType::EXPLAIN: {
-      schema.append_cell("Query Plan");
+      schema.append_cell("Query Plan",nullptr);
     } break;
     default: {
       // 只有select返回结果

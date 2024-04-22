@@ -127,12 +127,14 @@ void SessionStage::handle_request(StageEvent *event)
 RC SessionStage::handle_sql(SQLStageEvent *sql_event)
 {
   RC rc = query_cache_stage_.handle_request(sql_event);
+  
   if (OB_FAIL(rc)) {
     LOG_TRACE("failed to do query cache. rc=%s", strrc(rc));
     return rc;
   }
 
   rc = parse_stage_.handle_request(sql_event);
+  
   if (OB_FAIL(rc)) {
     LOG_TRACE("failed to do parse. rc=%s", strrc(rc));
     return rc;
@@ -143,14 +145,17 @@ RC SessionStage::handle_sql(SQLStageEvent *sql_event)
     LOG_TRACE("failed to do resolve. rc=%s", strrc(rc));
     return rc;
   }
-  
+   
+
   rc = optimize_stage_.handle_request(sql_event);
+  
   if (rc != RC::UNIMPLENMENT && rc != RC::SUCCESS) {
     LOG_TRACE("failed to do optimize. rc=%s", strrc(rc));
     return rc;
   }
   
   rc = execute_stage_.handle_request(sql_event);
+  
   if (OB_FAIL(rc)) {
     LOG_TRACE("failed to do execute. rc=%s", strrc(rc));
     return rc;

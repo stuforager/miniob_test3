@@ -6,6 +6,7 @@
 #include "storage/trx/trx.h"
 #include "sql/stmt/delete_stmt.h"
 #include <iostream>
+#include <cctype> // 包含头文件
 
 
 void AggregatePhysicalOperator:: add_aggregation(const AggrOp aggregation)
@@ -40,6 +41,7 @@ RC AggregatePhysicalOperator::next()
  PhysicalOperator*oper=children_[0].get();
 
  std::vector<Value> result_cells(aggregations_.size(),Value());
+ int avg_count = 0; // 初始化 avg_count
 
  while(RC::SUCCESS==(rc=oper->next())){
     Tuple *tuple=oper->current_tuple();
@@ -55,7 +57,7 @@ RC AggregatePhysicalOperator::next()
              attr_type=cell.attr_type();
              if(attr_type==AttrType::INTS or attr_type==AttrType::FLOATS){
                 result_cells[cell_idx].set_float(result_cells[cell_idx].get_float()+cell.get_float());
-                std::cout<<result_cells[cell_idx].get_float();
+                
              }
             break;
           case AggrOp::AGGR_MAX:
@@ -65,61 +67,123 @@ RC AggregatePhysicalOperator::next()
                         // 如果当前单元格值大于之前保存的最大值，则更新最大值
                         if (cell.get_float() > result_cells[cell_idx].get_float()) {
                             result_cells[cell_idx].set_float(cell.get_float());
+                            
+                        }
+                    }else if (attr_type == AttrType::CHARS) {
+                        std::string current_str = cell.get_string();
+                        std::string max_str = result_cells[cell_idx].get_string();
+                        char * arr=new char[1000];
+                        for(int i=0;i<current_str.size();i++){
+                          if('a' <= current_str[i] && current_str[i] <= 'z')
+                          arr[i]=current_str[i]-32;
+                          else arr[i]=current_str[i];
+                        }
+                        if (current_str > max_str) {
+                            result_cells[cell_idx].set_string(arr);
+                            free(arr);
                         }
                     }
+                   
+                    
                     break;
           case AggrOp::AGGR_MIN:
               rc = tuple->cell_at(cell_idx, cell);
                     attr_type = cell.attr_type();
                     if (attr_type == AttrType::INTS || attr_type == AttrType::FLOATS) {
-                        // 如果当前单元格值小于之前保存的最小值，则更新最小值
-                        if (cell.get_float() < result_cells[cell_idx].get_float() ) {
-                            result_cells[cell_idx].set_float(cell.get_float());
+                         if (result_cells[cell_idx].length()==0) {
+                           result_cells[cell_idx] = cell;
+                           } else {
+            // 否则，如果当前单元格值小于之前保存的最小值，则更新最小值
+                   if (cell.get_float() < result_cells[cell_idx].get_float()) {
+                    result_cells[cell_idx].set_float(cell.get_float());
+                  }
+                 }
+                    }
+                    else if (attr_type == AttrType::CHARS) {
+                      if (result_cells[cell_idx].length()==0) {
+                           result_cells[cell_idx] = cell;
+                           string sr=cell.get_string();
+                           char* srr=new char[1000];
+                           for(int j=0;j<sr.size();j++){
+                            if('a'<=sr[j]&&sr[j]<='z'){
+                              srr[j]=sr[j]-32;
+                            }
+                            else {srr[j]=sr[j];
+                            
+                            }
+                           }
+                           srr[sr.size()] = '\0'; // 添加终止符
+                            result_cells[cell_idx].set_string(srr);
+                            delete[]srr;
+                           }
+                          else{
+                        std::string current_str = cell.get_string();
+                        std::string min_str = result_cells[cell_idx].get_string();
+                        char * brr=new char[1000];
+                        for(int i=0;i<current_str.size();i++){
+                           if('a' <= current_str[i] && current_str[i] <= 'z')
+                          brr[i]=current_str[i]-32;
+                          else brr[i]=current_str[i];
                         }
+                        if (current_str < min_str) {
+                            brr[current_str.size()] = '\0'; // 添加终止符
+                            result_cells[cell_idx].set_string(brr);
+                            delete[]brr;
+                        }
+                           }
                     }
                     break;
           case AggrOp::AGGR_COUNT:
               result_cells[cell_idx].set_int(result_cells[cell_idx].get_int() + 1);
                     break;
+          case AggrOp::AGGR_COUNT_ALL:
+              result_cells[cell_idx].set_int(result_cells[cell_idx].get_int() + 1);
+                    break;
           case AggrOp::AGGR_AVG:
                 rc = tuple->cell_at(cell_idx, cell);
                     attr_type = cell.attr_type();
-                    if (attr_type == AttrType::INTS || attr_type == AttrType::FLOATS) {
-                        // 实现求和逻辑
-                        result_cells[cell_idx].set_float(result_cells[cell_idx].get_float() + cell.get_float());
-                        // 记录元组个数
-                        result_cells[result_cells.size() - 1].set_int(result_cells[result_cells.size() - 1].get_int() + 1);
-                    }
-                    break;
+                    
+                if (attr_type == AttrType::INTS || attr_type == AttrType::FLOATS) {
+                  if (result_cells[cell_idx].length()==0) {
+                    result_cells[cell_idx] = cell;
+                    
+             } else {
+            // 否则，实现求和逻辑
+             result_cells[cell_idx].set_float(result_cells[cell_idx].get_float() + cell.get_float());
+             }
+        
+              avg_count++;
+           }
+            break;
               
         
         default:
             return RC::UNIMPLENMENT;
-        }
+                }
     }
+ }
      if (rc == RC::RECORD_EOF) {
         rc = RC::SUCCESS;
     }
 
-    // 计算平均值
-    for (int i = 0; i < result_cells.size(); ++i) {
-        if (aggregations_[i] == AggrOp::AGGR_AVG) {
-            result_cells[i].set_float(result_cells[i].get_float() / result_cells[result_cells.size() - 1].get_int());
-        }
-    }
-
-    result_tuple_.set_cells(result_cells);
-
-    return rc;
- }
  if(rc==RC::RECORD_EOF){
     rc=RC::SUCCESS;
  }
+
+for (size_t cell_idx = 0; cell_idx < aggregations_.size(); cell_idx++) {
+        if (aggregations_[cell_idx] == AggrOp::AGGR_AVG) {
+            if (avg_count > 0) {
+                result_cells[cell_idx].set_float(result_cells[cell_idx].get_float() / avg_count);
+            }
+        }
+    }
+
 
  result_tuple_.set_cells(result_cells);
 
  return rc;
 }
+
 
 RC AggregatePhysicalOperator::close()
 {

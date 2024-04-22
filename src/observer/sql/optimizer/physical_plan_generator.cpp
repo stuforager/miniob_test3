@@ -11,6 +11,7 @@ See the Mulan PSL v2 for more details. */
 //
 // Created by Wangyunlai on 2022/12/14.
 
+#include<iostream>
 
 #include <utility>
 
@@ -39,6 +40,7 @@ See the Mulan PSL v2 for more details. */
 #include "sql/operator/aggregate_logical_operator.h"
 
 using namespace std;
+
 
 RC PhysicalPlanGenerator::create(LogicalOperator &logical_operator, unique_ptr<PhysicalOperator> &oper)
 {
@@ -76,7 +78,10 @@ RC PhysicalPlanGenerator::create(LogicalOperator &logical_operator, unique_ptr<P
     case LogicalOperatorType::JOIN: {
       return create_plan(static_cast<JoinLogicalOperator &>(logical_operator), oper);
     } break;
-
+    
+    case LogicalOperatorType::AGGREGATE: {
+      return create_plan(static_cast<AggregateLogicalOperator &>(logical_operator), oper);
+    } break;
     default: {
       return RC::INVALID_ARGUMENT;
     }
@@ -298,10 +303,10 @@ RC PhysicalPlanGenerator::create_plan(CalcLogicalOperator &logical_oper, std::un
 RC PhysicalPlanGenerator::create_plan(AggregateLogicalOperator &aggregate_oper, unique_ptr<PhysicalOperator> &oper)
 {
 
-  vector<unique_ptr<LogicalOperator>> &child_opers = aggregate_oper.children();
-  ASSERT(child_opers.size()==1,"aggregate logical operator's sub oper number should be 1");
+  vector<unique_ptr<LogicalOperator>> &children_opers = aggregate_oper.children();
+  ASSERT(children_opers.size()==1,"aggregate logical operator's sub oper number should be 1");
   
-  LogicalOperator &child_oper=*child_opers.front();
+  LogicalOperator &child_oper=*children_opers.front();
 
   unique_ptr<PhysicalOperator> child_phy_oper;
   RC rc=create(child_oper,child_phy_oper);
@@ -313,6 +318,7 @@ RC PhysicalPlanGenerator::create_plan(AggregateLogicalOperator &aggregate_oper, 
   AggregatePhysicalOperator*aggregate_operator=new AggregatePhysicalOperator;
   const vector<Field>&aggregate_fields=aggregate_oper.fields();
   LOG_TRACE("got %d aggregation fields",aggregate_fields.size());
+  
   for(const Field&field:aggregate_fields){
     aggregate_operator->add_aggregation(field.aggregation());
   }
@@ -323,5 +329,6 @@ RC PhysicalPlanGenerator::create_plan(AggregateLogicalOperator &aggregate_oper, 
   oper=unique_ptr<PhysicalOperator>(aggregate_operator);
 
   LOG_TRACE("create an aggregate physical operator");
+  
   return rc;
 }

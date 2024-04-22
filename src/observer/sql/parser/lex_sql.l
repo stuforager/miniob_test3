@@ -113,6 +113,7 @@ MAX                                     RETURN_TOKEN(MAX_F);
 MIN                                     RETURN_TOKEN(MIN_F);
 AVG                                     RETURN_TOKEN(AVG_F);
 COUNT                                   RETURN_TOKEN(COUNT_F);
+COUNT_ALL                               RETURN_TOKEN(COUNT_ALL_F);
 DATE                                    RETURN_TOKEN(DATE_T);
 CHAR                                    RETURN_TOKEN(STRING_T);
 FLOAT                                   RETURN_TOKEN(FLOAT_T);

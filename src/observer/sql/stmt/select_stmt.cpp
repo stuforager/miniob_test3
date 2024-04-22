@@ -18,6 +18,7 @@ See the Mulan PSL v2 for more details. */
 #include "common/lang/string.h"
 #include "storage/db/db.h"
 #include "storage/table/table.h"
+#include <iostream>
 
 SelectStmt::~SelectStmt()
 {
@@ -27,14 +28,23 @@ SelectStmt::~SelectStmt()
   }
 }
 
-static void wildcard_fields(Table *table, std::vector<Field> &field_metas)
+
+static void wildcard_fields(Table *table, std::vector<Field> &field_metas,AggrOp aggregation=AGGR_NODE)
 {
   const TableMeta &table_meta = table->table_meta();
   const int field_num = table_meta.field_num();
   for (int i = table_meta.sys_field_num(); i < field_num; i++) {
-    field_metas.push_back(Field(table, table_meta.field(i)));
+    if(aggregation==AggrOp::AGGR_COUNT){
+      field_metas.push_back(Field(table, table_meta.field(i),AggrOp::AGGR_COUNT_ALL));
+      break;
+    }
+    else {
+      
+      field_metas.push_back(Field(table, table_meta.field(i),AggrOp::AGGR_NODE));
+    }
   }
 }
+
 
 RC SelectStmt::create(Db *db, const SelectSqlNode &select_sql, Stmt *&stmt)
 {
@@ -42,12 +52,51 @@ RC SelectStmt::create(Db *db, const SelectSqlNode &select_sql, Stmt *&stmt)
     LOG_WARN("invalid argument. db is null");
     return RC::INVALID_ARGUMENT;
   }
+// 收集 `select` 语句中的查询字段
+std::vector<Field> query_fields;
+
+for (int i = static_cast<int>(select_sql.attributes.size()) - 1; i >= 0; i--) {
+    const RelAttrSqlNode &relation_attr = select_sql.attributes[i];
+
+    // 如果关系名称为空且属性名为 "*"，则处理所有字段
+    if (common::is_blank(relation_attr.relation_name.c_str()) &&
+        0 == strcmp(relation_attr.attribute_name.c_str(), "*")) {
+          bool valid_=relation_attr.valid;
+          if(!valid_){
+        return RC::INVALID_ARGUMENT;
+         }
+          if(relation_attr.aggregation!=AggrOp::AGGR_NODE){
+          if(relation_attr.aggregation!=AggrOp::AGGR_COUNT){
+            return RC::INVALID_ARGUMENT;
+          }
+          else{
+            
+          }
+          }
+        // 对于每个表，处理所有字段
+        SelectStmt *select_stmt = new SelectStmt();
+        for (Table *table :select_stmt->tables_) {
+            
+            wildcard_fields(table, query_fields);
+        }
+
+        // 检查聚合函数是否为 count
+        for (const auto &field : query_fields) {
+            if (field.aggregation() != AggrOp::AGGR_COUNT) {
+                LOG_WARN("使用 '*' 时无效的字段聚合函数");
+                return RC::INVALID_ARGUMENT;
+            }
+        }
+
+    } 
+}
 
   // collect tables in `from` statement
   std::vector<Table *> tables;
   std::unordered_map<std::string, Table *> table_map;
   for (size_t i = 0; i < select_sql.relations.size(); i++) {
     const char *table_name = select_sql.relations[i].c_str();
+    
     if (nullptr == table_name) {
       LOG_WARN("invalid argument. relation name is null. index=%d", i);
       return RC::INVALID_ARGUMENT;
@@ -64,67 +113,87 @@ RC SelectStmt::create(Db *db, const SelectSqlNode &select_sql, Stmt *&stmt)
   }
 
   // collect query fields in `select` statement
-  std::vector<Field> query_fields;
+  //std::vector<Field> query_fields;
+
+ 
   for (int i = static_cast<int>(select_sql.attributes.size()) - 1; i >= 0; i--) {
     const RelAttrSqlNode &relation_attr = select_sql.attributes[i];
-
     if (common::is_blank(relation_attr.relation_name.c_str()) &&
         0 == strcmp(relation_attr.attribute_name.c_str(), "*")) {
+             
       for (Table *table : tables) {
-        wildcard_fields(table, query_fields);
+          
+        wildcard_fields(table, query_fields,relation_attr.aggregation);
       }
 
     } else if (!common::is_blank(relation_attr.relation_name.c_str())) {
       const char *table_name = relation_attr.relation_name.c_str();
       const char *field_name = relation_attr.attribute_name.c_str();
+       
 
       if (0 == strcmp(table_name, "*")) {
         if (0 != strcmp(field_name, "*")) {
+          
+          
           LOG_WARN("invalid field name while table is *. attr=%s", field_name);
           return RC::SCHEMA_FIELD_MISSING;
         }
         for (Table *table : tables) {
+             
           wildcard_fields(table, query_fields);
         }
       } else {
         auto iter = table_map.find(table_name);
         if (iter == table_map.end()) {
+         
           LOG_WARN("no such table in from list: %s", table_name);
           return RC::SCHEMA_FIELD_MISSING;
         }
-
+        
         Table *table = iter->second;
         if (0 == strcmp(field_name, "*")) {
+          if(relation_attr.aggregation!=AggrOp::AGGR_NODE){
+          if(relation_attr.aggregation!=AggrOp::AGGR_COUNT){
+            return RC::INVALID_ARGUMENT;
+          }
+          
+          }  
+             
           wildcard_fields(table, query_fields);
         } else {
+          
           const FieldMeta *field_meta = table->table_meta().field(field_name);
           if (nullptr == field_meta) {
             LOG_WARN("no such field. field=%s.%s.%s", db->name(), table->name(), field_name);
             return RC::SCHEMA_FIELD_MISSING;
           }
-
-          query_fields.push_back(Field(table, field_meta));
+          
+          const AggrOp aggregation_=relation_attr.aggregation;
+          query_fields.push_back(Field(table, field_meta,aggregation_));
         }
       }
     } else {
       if (tables.size() != 1) {
+       
         LOG_WARN("invalid. I do not know the attr's table. attr=%s", relation_attr.attribute_name.c_str());
         return RC::SCHEMA_FIELD_MISSING;
       }
-
+      
       Table *table = tables[0];
       const FieldMeta *field_meta = table->table_meta().field(relation_attr.attribute_name.c_str());
       if (nullptr == field_meta) {
+        
         LOG_WARN("no such field. field=%s.%s.%s", db->name(), table->name(), relation_attr.attribute_name.c_str());
         return RC::SCHEMA_FIELD_MISSING;
       }
+     
       const AggrOp aggregation_=relation_attr.aggregation;
 
       bool valid_=relation_attr.valid;
       if(!valid_){
         return RC::INVALID_ARGUMENT;
       }
-
+      
       query_fields.push_back(Field(table, field_meta,aggregation_));
     }
   }
