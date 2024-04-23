@@ -54,13 +54,32 @@ RC SelectStmt::create(Db *db, const SelectSqlNode &select_sql, Stmt *&stmt)
   }
 // 收集 `select` 语句中的查询字段
 std::vector<Field> query_fields;
+int attribute_count=0,aggregation_count=0;
+for (int i = static_cast<int>(select_sql.attributes.size()) - 1; i >= 0; i--) {
+    const RelAttrSqlNode &relation_attr = select_sql.attributes[i];
+    if (relation_attr.attribute_flag) {
+        attribute_count++;
+    }
+    if (relation_attr.aggregation_flag) {
+        aggregation_count++;
+    }
+
+    // 如果属性和聚合函数的个数都超过了1，则返回无效参数
+    if (attribute_count >=1 &&aggregation_count >=1) {
+      attribute_count=0;
+      aggregation_count=0;
+        return RC::INVALID_ARGUMENT;
+    }
+}
 
 for (int i = static_cast<int>(select_sql.attributes.size()) - 1; i >= 0; i--) {
     const RelAttrSqlNode &relation_attr = select_sql.attributes[i];
+    
 
     // 如果关系名称为空且属性名为 "*"，则处理所有字段
     if (common::is_blank(relation_attr.relation_name.c_str()) &&
         0 == strcmp(relation_attr.attribute_name.c_str(), "*")) {
+          
           bool valid_=relation_attr.valid;
           if(!valid_){
         return RC::INVALID_ARGUMENT;
@@ -68,9 +87,6 @@ for (int i = static_cast<int>(select_sql.attributes.size()) - 1; i >= 0; i--) {
           if(relation_attr.aggregation!=AggrOp::AGGR_NODE){
           if(relation_attr.aggregation!=AggrOp::AGGR_COUNT){
             return RC::INVALID_ARGUMENT;
-          }
-          else{
-            
           }
           }
         // 对于每个表，处理所有字段
@@ -118,6 +134,10 @@ for (int i = static_cast<int>(select_sql.attributes.size()) - 1; i >= 0; i--) {
  
   for (int i = static_cast<int>(select_sql.attributes.size()) - 1; i >= 0; i--) {
     const RelAttrSqlNode &relation_attr = select_sql.attributes[i];
+    bool valid_=relation_attr.valid;
+          if(!valid_){
+        return RC::INVALID_ARGUMENT;
+         }
     if (common::is_blank(relation_attr.relation_name.c_str()) &&
         0 == strcmp(relation_attr.attribute_name.c_str(), "*")) {
              
@@ -189,7 +209,7 @@ for (int i = static_cast<int>(select_sql.attributes.size()) - 1; i >= 0; i--) {
      
       const AggrOp aggregation_=relation_attr.aggregation;
 
-      bool valid_=relation_attr.valid;
+      //bool valid_=relation_attr.valid;
       if(!valid_){
         return RC::INVALID_ARGUMENT;
       }

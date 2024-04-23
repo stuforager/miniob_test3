@@ -49,6 +49,9 @@ struct RelAttrSqlNode
   std::string attribute_name;  ///< attribute name              属性名
   AggrOp aggregation=AGGR_NODE; 
   bool valid=true;
+  bool aggregation_flag=false;
+  bool attribute_flag=false;
+
 };
 
 /**

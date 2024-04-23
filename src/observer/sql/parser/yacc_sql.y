@@ -561,11 +561,23 @@ rel_attr_aggr:
 rel_attr:
     ID {
       $$ = new RelAttrSqlNode;
+      if($$->attribute_flag==false){
+        $$->attribute_flag=true;
+      }
+      if($$->attribute_flag==true&&$$->aggregation_flag==true){
+        $$->valid=false;
+      }
       $$->attribute_name = $1;
       free($1);
     }
     | ID DOT ID {
       $$ = new RelAttrSqlNode;
+      if($$->attribute_flag==false){
+        $$->attribute_flag=true;
+      }
+      if($$->attribute_flag==true&&$$->aggregation_flag==true){
+        $$->valid=false;
+      }
       $$->relation_name  = $1;
       $$->attribute_name = $3;
       free($1);
@@ -573,6 +585,12 @@ rel_attr:
     }
     | aggr_op LBRACE rel_attr_aggr rel_attr_aggr_list RBRACE{
       $$=$3;
+      if($$->aggregation_flag==false){
+        $$->aggregation_flag=true;
+      }
+      if($$->attribute_flag==true&&$$->aggregation_flag==true){
+        $$->valid=false;
+      }
       $$->aggregation=$1;
       if($4!=nullptr){
         $$->valid=false;
@@ -581,6 +599,12 @@ rel_attr:
     }
     | aggr_op LBRACE RBRACE{
       $$ = new RelAttrSqlNode;
+      if($$->aggregation_flag==false){
+        $$->aggregation_flag=true;
+      }
+      if($$->attribute_flag==true&&$$->aggregation_flag==true){
+        $$->valid=false;
+      }
       $$->relation_name="";
       $$->attribute_name="";
       $$->aggregation=$1;
