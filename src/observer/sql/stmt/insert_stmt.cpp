@@ -63,8 +63,8 @@ See the Mulan PSL v2 for more details. */
       int val=values[i].get_date();
       int year=val/10000,month=(val/100)%100,day=val%100;
       //1971--2038.2
-      if(year<1970||year>2038) return RC::SCHEMA_FIELD_TYPE_MISMATCH;
-      if(year==2038&&month>2)  return RC::SCHEMA_FIELD_TYPE_MISMATCH;
+      /*if(year<1970||year>2038) return RC::SCHEMA_FIELD_TYPE_MISMATCH;
+      if(year==2038&&month>2)  return RC::SCHEMA_FIELD_TYPE_MISMATCH;*/
       if(month<1||month>12)return RC::SCHEMA_FIELD_TYPE_MISMATCH;
       int daymax[]={0,31,28,31,30,31,30,31,31,30,31,30,31};
       if(month==2)

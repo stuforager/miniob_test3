@@ -564,9 +564,7 @@ rel_attr:
       if($$->attribute_flag==false){
         $$->attribute_flag=true;
       }
-      if($$->attribute_flag==true&&$$->aggregation_flag==true){
-        $$->valid=false;
-      }
+      
       $$->attribute_name = $1;
       free($1);
     }
@@ -575,9 +573,7 @@ rel_attr:
       if($$->attribute_flag==false){
         $$->attribute_flag=true;
       }
-      if($$->attribute_flag==true&&$$->aggregation_flag==true){
-        $$->valid=false;
-      }
+      
       $$->relation_name  = $1;
       $$->attribute_name = $3;
       free($1);
@@ -588,9 +584,7 @@ rel_attr:
       if($$->aggregation_flag==false){
         $$->aggregation_flag=true;
       }
-      if($$->attribute_flag==true&&$$->aggregation_flag==true){
-        $$->valid=false;
-      }
+      
       $$->aggregation=$1;
       if($4!=nullptr){
         $$->valid=false;
@@ -602,9 +596,7 @@ rel_attr:
       if($$->aggregation_flag==false){
         $$->aggregation_flag=true;
       }
-      if($$->attribute_flag==true&&$$->aggregation_flag==true){
-        $$->valid=false;
-      }
+      
       $$->relation_name="";
       $$->attribute_name="";
       $$->aggregation=$1;
