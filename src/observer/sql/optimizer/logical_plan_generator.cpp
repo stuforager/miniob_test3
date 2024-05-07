@@ -34,9 +34,9 @@ See the Mulan PSL v2 for more details. */
 #include "sql/stmt/explain_stmt.h"
 #include "sql/operator/aggregate_logical_operator.h"
 #include "sql/operator/aggregate_physical_operator.h"
-
+#include "sql/stmt/update_stmt.h"
 #include "sql/expr/expression.h"
-
+#include "sql/operator/update_logical_operator.h"
 using namespace std;
 
 RC LogicalPlanGenerator::create(Stmt *stmt, unique_ptr<LogicalOperator> &logical_operator)
@@ -50,7 +50,7 @@ RC LogicalPlanGenerator::create(Stmt *stmt, unique_ptr<LogicalOperator> &logical
 
     case StmtType::SELECT: {
       SelectStmt *select_stmt = static_cast<SelectStmt *>(stmt);
-      rc = create_plan(select_stmt, logical_operator);
+      rc = create_plan(select_stmt, logical_operator);                                                                                                                                    
     } break;
 
     case StmtType::INSERT: {
@@ -62,7 +62,10 @@ RC LogicalPlanGenerator::create(Stmt *stmt, unique_ptr<LogicalOperator> &logical
       DeleteStmt *delete_stmt = static_cast<DeleteStmt *>(stmt);
       rc = create_plan(delete_stmt, logical_operator);
     } break;
-
+    case StmtType::UPDATE: {
+      UpdateStmt*update_stmt = static_cast<UpdateStmt *>(stmt);
+      rc = create_plan(update_stmt, logical_operator);
+    } break;
     case StmtType::EXPLAIN: {
       ExplainStmt *explain_stmt = static_cast<ExplainStmt *>(stmt);
       rc = create_plan(explain_stmt, logical_operator);
@@ -175,6 +178,36 @@ RC LogicalPlanGenerator::create_plan(
 
   logical_operator = std::move(predicate_oper);
   return RC::SUCCESS;
+}
+
+RC LogicalPlanGenerator::create_plan(
+    UpdateStmt *update_stmt, unique_ptr<LogicalOperator> &logical_operator)
+{
+  Table *table = update_stmt->table();
+  
+  std::vector<Field> fields;
+  fields.emplace_back(update_stmt->field());
+  unique_ptr<LogicalOperator>table_get_oper(new TableGetLogicalOperator(table,fields,false));
+
+  unique_ptr<LogicalOperator>filter_oper;
+  FilterStmt*filter_stmt=update_stmt->filter_stmt();
+  RC rc=create_plan(filter_stmt,filter_oper);
+  if(rc!=RC::SUCCESS){
+    return rc;
+  }
+
+
+  unique_ptr<LogicalOperator>update_oper(new UpdateLogicalOperator(table,update_stmt->field(),update_stmt->value()));
+
+  if(filter_oper){
+    filter_oper->add_child(std::move(table_get_oper));
+    update_oper->add_child(std::move(filter_oper));
+  }else{
+    update_oper->add_child(std::move(table_get_oper));
+  }
+
+  logical_operator=std::move(update_oper);
+  return rc;
 }
 
 RC LogicalPlanGenerator::create_plan(

@@ -57,7 +57,6 @@ public:
   {
     return filter_stmt_;
   }
-
 private:
   std::vector<Field> query_fields_;
   std::vector<Table *> tables_;

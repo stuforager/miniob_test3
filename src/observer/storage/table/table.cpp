@@ -28,7 +28,7 @@ See the Mulan PSL v2 for more details. */
 #include "storage/index/index.h"
 #include "storage/index/bplus_tree_index.h"
 #include "storage/trx/trx.h"
-
+#include "sql/expr/tuple.h"
 Table::~Table()
 {
   if (record_handler_ != nullptr) {
@@ -340,6 +340,8 @@ RC Table::get_record_scanner(RecordFileScanner &scanner, Trx *trx, bool readonly
   }
   return rc;
 }
+
+
 
 RC Table::create_index(Trx *trx, const FieldMeta *field_meta, const char *index_name)
 {

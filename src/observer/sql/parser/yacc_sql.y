@@ -572,8 +572,7 @@ rel_attr:
       $$ = new RelAttrSqlNode;
       if($$->attribute_flag==false){
         $$->attribute_flag=true;
-      }
-      
+      }     
       $$->relation_name  = $1;
       $$->attribute_name = $3;
       free($1);
@@ -596,7 +595,6 @@ rel_attr:
       if($$->aggregation_flag==false){
         $$->aggregation_flag=true;
       }
-      
       $$->relation_name="";
       $$->attribute_name="";
       $$->aggregation=$1;
