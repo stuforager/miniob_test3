@@ -45,7 +45,6 @@ RC UpdatePhysicalOperator::next()
     }
     RowTuple *row_tuple = static_cast<RowTuple *>(tuple);
     Record   &record    = row_tuple->record();
-
     // 定位列名索引
     const std::vector<FieldMeta> *table_field_metas = table_->table_meta().field_metas();
     const char                   *target_field_name = field_.field_name();
@@ -59,23 +58,18 @@ RC UpdatePhysicalOperator::next()
         break;
       }
     }
-
     // 获取目标字段的类型
     AttrType target_field_type = table_field_metas->at(target_index).type();
-
     // 检查设置的新值与目标字段类型是否匹配
     if (value_.attr_type() != target_field_type) {
       LOG_WARN("Value type does not match target field type");
       return RC::INVALID_ARGUMENT; // 或者选择适当的错误代码
     }
-
-
     RC rc = trx_->delete_record(table_, record);
     if (rc != RC::SUCCESS) {
       LOG_WARN("failed to delete record: %s",strrc(rc));
       return rc;
     }
-    
     // 重新构造record
     // 1.Values
     int                cell_num = row_tuple->cell_num();

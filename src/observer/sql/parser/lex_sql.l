@@ -107,6 +107,8 @@ SET                                     RETURN_TOKEN(SET);
 BEGIN                                   RETURN_TOKEN(TRX_BEGIN);
 COMMIT                                  RETURN_TOKEN(TRX_COMMIT);
 ROLLBACK                                RETURN_TOKEN(TRX_ROLLBACK);
+JOIN                                    RETURN_TOKEN(JOIN);
+INNER                                   RETURN_TOKEN(INNER);
 INT                                     RETURN_TOKEN(INT_T);
 SUM                                     RETURN_TOKEN(SUM_F);
 MAX                                     RETURN_TOKEN(MAX_F);
